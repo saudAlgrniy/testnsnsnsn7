@@ -3,51 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تشغيل الفيديو مع الترجمة باستخدام Video.js</title>
-
-    <!-- تضمين CSS لمكتبة Video.js -->
-    <link href="https://vjs.zencdn.net/8.0.4/video-js.css" rel="stylesheet" />
-
+    <title>تشغيل الفيديو مع الترجمة</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             margin: 20px;
         }
-        .video-js {
+        video {
             width: 80%;
             max-width: 600px;
-        }
-        /* تنسيق الترجمة */
-        .vjs-text-track {
-            font-size: 24px;
-            color: yellow;
-            background-color: transparent !important;
-            text-shadow: none;
         }
     </style>
 </head>
 <body>
-
     <h1>تشغيل الفيديو مع الترجمة</h1>
     <input type="text" id="videoUrl" placeholder="أدخل رابط الفيديو هنا">
     <input type="file" id="vttFile" accept=".vtt">
     <button onclick="loadVideo()">تشغيل الفيديو</button>
 
-    <!-- مشغل فيديو باستخدام Video.js -->
-    <video
-      id="videoPlayer"
-      class="video-js vjs-default-skin"
-      controls
-      preload="auto"
-      data-setup='{}'>
-      <source id="videoSource" src="" type="video/mp4">
-      <track kind="subtitles" src="" srclang="ar" label="Arabic" id="subtitleTrack">
-      الفيديو غير مدعوم.
+    <video id="videoPlayer" controls>
+        <source id="videoSource" src="" type="video/mp4">
+        الفيديو غير مدعوم.
     </video>
-
-    <!-- تضمين JavaScript لمكتبة Video.js -->
-    <script src="https://vjs.zencdn.net/8.0.4/video.min.js"></script>
 
     <script>
         function loadVideo() {
@@ -55,7 +33,7 @@
             const videoSource = document.getElementById('videoSource');
             videoSource.src = url;
 
-            const videoPlayer = videojs('videoPlayer'); // تهيئة Video.js
+            const videoPlayer = document.getElementById('videoPlayer');
             videoPlayer.load();
 
             const fileInput = document.getElementById('vttFile');
@@ -73,38 +51,22 @@
         }
 
         function addCuesToVideo(vttData, videoPlayer) {
-            const track = videoPlayer.textTracks()[0]; // الوصول إلى مسار الترجمة
             const lines = vttData.split('\n');
-            
-            let cueText = "";
-            let startTime = null;
-            let endTime = null;
+            const track = videoPlayer.addTextTrack("subtitles", "الترجمة", "ar");
 
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (line.startsWith("vttcue")) {
                     const cueMatch = line.match(/vttcue\(([^,]+), ([^)]+)\)/);
                     if (cueMatch) {
-                        // إذا كانت هناك ترجمة سابقة لم تُضف بعد، أضفها
-                        if (cueText) {
-                            track.addCue(new VTTCue(startTime, endTime, cueText.trim()));
-                            cueText = "";
-                        }
-
-                        startTime = parseFloat(cueMatch[1]);
-                        endTime = parseFloat(cueMatch[2]);
+                        const startTime = parseFloat(cueMatch[1]);
+                        const endTime = parseFloat(cueMatch[2]);
+                        const text = lines[++i].trim(); // النص في السطر التالي
+                        track.addCue(new VTTCue(startTime, endTime, text));
                     }
-                } else if (line !== "") {
-                    cueText += line + "\n";
                 }
-            }
-
-            // إضافة الترجمة الأخيرة إن وجدت
-            if (cueText) {
-                track.addCue(new VTTCue(startTime, endTime, cueText.trim()));
             }
         }
     </script>
-
 </body>
 </html>
